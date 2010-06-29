@@ -105,26 +105,3 @@ void *eventMonitor() {
 
 	pthread_exit(NULL);
 }
-
-/*
-int main()
-{
-	int activity;
-	//example of intended use
-	pthread_t mainthread;
-	//every thread needs to see and be able to modify activity
-	eventData.activity = &activity;
-	eventData.timeout = 10;
-	//start loops here
-	activity = 0;
-	//start the eventMonitor
-	pthread_create(&mainthread, NULL, eventMonitor, NULL);
-	// Do other stuff here, and sleep at least timeout seconds.
-	// The data will be ready by then.
-	pthread_join(mainthread,NULL);
-	printf("activity=%d\n", activity);
-	//end loops here
-
-	return 0;
-}
-*/
