@@ -1,3 +1,9 @@
+sleepd (2.03) UNRELEASED; urgency=low
+
+  * Add --force-hal option. Closes: #597369
+
+ -- Joey Hess <joeyh@debian.org>  Wed, 29 Sep 2010 16:09:48 -0400
+
 sleepd (2.02) unstable; urgency=low
 
   * Improve eventmonitor thread, to be both more correct and use

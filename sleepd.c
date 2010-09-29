@@ -47,6 +47,7 @@ signed int min_batt=-1;
 int use_simplehal = 0;
 #endif
 int use_acpi=0;
+int force_hal=0;
 int require_unused_and_battery=0;	/* --and or -A option */
 double max_loadavg = 0;
 int use_utmp=0;
@@ -58,7 +59,7 @@ char netdevrx[MAX_NET][44];
 int debug=0;
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-v] [-c n] [-b n] [-A] [-N [dev] [-t n] [-r n]]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-v] [-c n] [-b n] [-A] [-H] [-N [dev] [-t n] [-r n]]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -84,6 +85,7 @@ void parse_command_line (int argc, char **argv) {
 		{"netdev", 2, NULL, 'N'},
 		{"rx-min", 1, NULL, 'r'},
 		{"tx-min", 1, NULL, 't'},
+		{"force-hal", 1, NULL, 'H'},
 		{0, 0, 0, 0}
 	};
 	int force_autoprobe=0;
@@ -123,6 +125,9 @@ void parse_command_line (int argc, char **argv) {
 				break;
 			case 'w':
 				use_utmp=1;
+				break;
+			case 'H':
+				force_hal=1;
 				break;
 			case 'i':
 				i = atoi(optarg);
@@ -600,7 +605,7 @@ int main (int argc, char **argv) {
 		}
 	}
 	
-	if (apm_exists() != 0) {
+	if (force_hal || apm_exists() != 0) {
 		if (! sleep_command)
 			sleep_command=acpi_sleep_command;
 
@@ -616,7 +621,7 @@ int main (int argc, char **argv) {
 		 * that the kernel no longer supports acpi power info, and
 		 * use hal.
 		 */
-		if (acpi_supported() &&
+		if (! force_hal && acpi_supported() &&
 		    (acpi_ac_count > 0 || acpi_batt_count > 0)) {
 			use_acpi=1;
 		}
