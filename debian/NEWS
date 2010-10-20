@@ -1,0 +1,7 @@
+sleepd (2.00) unstable; urgency=low
+
+  To put a system to sleep, sleepd now uses the pm-suspend command,
+  instead of hibernate --force. To continue using hibernate,
+  use the -d flag.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 15 May 2009 15:39:55 -0400

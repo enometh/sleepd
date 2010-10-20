@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_install:
+	$(MAKE) install PREFIX=debian/sleepd
+
+override_dh_installinit:
+	dh_installinit -- start 30 2 3 4 5 . stop 80 1 .
+
+override_dh_fixperms:
+	dh_fixperms -X sleepctl
+
+# Not intended for use by anyone except the author.
+announcedir:
+	@echo ${HOME}/src/joeywiki/code/sleepd/news
