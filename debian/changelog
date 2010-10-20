@@ -1,3 +1,9 @@
+sleepd (2.04) UNRELEASED; urgency=low
+
+  * Fix getopt for --force-hal option. Closes: #600168
+
+ -- Joey Hess <joeyh@debian.org>  Wed, 20 Oct 2010 13:38:00 -0400
+
 sleepd (2.03) unstable; urgency=low
 
   * Add --force-hal option. Closes: #597369

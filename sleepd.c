@@ -85,7 +85,7 @@ void parse_command_line (int argc, char **argv) {
 		{"netdev", 2, NULL, 'N'},
 		{"rx-min", 1, NULL, 'r'},
 		{"tx-min", 1, NULL, 't'},
-		{"force-hal", 1, NULL, 'H'},
+		{"force-hal", 0, NULL, 'H'},
 		{0, 0, 0, 0}
 	};
 	int force_autoprobe=0;
@@ -100,7 +100,7 @@ void parse_command_line (int argc, char **argv) {
 	char rx_statfile[44];
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:d:nvu:U:l:wIi:Ee:hac:b:AN::r:t:", long_options, NULL);
+		c=getopt_long(argc,argv, "s:d:nvu:U:l:wIi:Ee:hac:b:AN::r:t:H", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
