@@ -1,4 +1,19 @@
-#include <apm.h>
+#if defined(USE_APM)
+# include <apm.h>
+#else
+typedef struct apm_info {
+	char driver_version[10];
+	int apm_version_major,
+	    apm_version_minor,
+	    apm_flags,
+	    ac_line_status,
+	    battery_status,
+	    battery_flags,
+	    battery_percentage,
+	    battery_time,
+	    using_minutes;
+} apm_info;
+#endif
 
 /* Symbolic constants for apm may be in system apm.h, or may not. */
 #ifndef AC_LINE_STATUS_ON

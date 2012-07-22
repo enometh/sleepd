@@ -5,28 +5,30 @@
  * GNU GPL.
  */
 
-#include <unistd.h>
-#include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <syslog.h>
-#include <time.h>
-#include <string.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+
+#include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
-#include <apm.h>
+#include <getopt.h>
+#include <pthread.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <time.h>
+#include <unistd.h>
 #include <utmp.h>
+
+#include "apm.h"
 #include "acpi.h"
 #ifdef HAL
 #include "simplehal.h"
 #endif
-#include <errno.h>
-#include <pthread.h>
 #include "eventmonitor.h"
-#include <signal.h>
 #include "sleepd.h"
 
 int irqs[MAX_IRQS]; /* irqs to examine have a value of 1 */
@@ -35,7 +37,9 @@ int have_irqs=0;
 int use_events=1;
 int max_unused=10 * 60; /* in seconds */
 int ac_max_unused=0;
+#ifdef USE_APM
 char *apm_sleep_command="apm -s";
+#endif
 char *acpi_sleep_command="pm-suspend";
 char *sleep_command=NULL;
 char *hibernate_command=NULL;
@@ -440,9 +444,16 @@ void main_loop (void) {
 			simplehal_read(1, &ai);
 		}
 #endif
+#if defined(USE_APM)
 		else {
 			apm_read(&ai);
 		}
+#else
+		else {
+			syslog(LOG_CRIT, "APM support is disabled, no other methods available. Abort.");
+			abort();
+		}
+#endif
 
 		if (min_batt != -1 && ai.ac_line_status != 1 && 
 		    ai.battery_percentage < min_batt &&
@@ -605,7 +616,11 @@ int main (int argc, char **argv) {
 		}
 	}
 	
-	if (force_hal || apm_exists() != 0) {
+	if (force_hal
+#ifdef USE_APM
+	    || apm_exists() != 0
+#endif
+	    ) {
 		if (! sleep_command)
 			sleep_command=acpi_sleep_command;
 
@@ -641,7 +656,11 @@ int main (int argc, char **argv) {
 #endif
 	}
 	if (! sleep_command) {
+#if defined(USE_APM)
 		sleep_command=apm_sleep_command;
+#else
+		sleep_command=acpi_sleep_command;
+#endif
 	}
 	if (! hibernate_command) {
 		hibernate_command=sleep_command;
