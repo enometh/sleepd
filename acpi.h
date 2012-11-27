@@ -49,7 +49,7 @@ enum acpi_labels_items {
 	label_status,
 	label_battery,
 	label_ac_adapter,
-	label_online,
+	label_capacity,
 	label_design_capacity,
 	label_present,
 	label_remaining_capacity,
@@ -64,4 +64,4 @@ enum acpi_labels_items {
 
 /* This is set to point to a list of strings used for the given acpi
  *  * version. */
-extern char **acpi_labels;
+extern char *acpi_labels[];

@@ -17,7 +17,7 @@
 
 #include "acpi.h"
 
-#define PROC_ACPI "/proc/acpi"
+#define SYSFS_PATH "/sys/class/power_supply"
 #define ACPI_MAXITEM 8
 
 int acpi_batt_count = 0;
@@ -32,47 +32,24 @@ int acpi_ac_count = 0;
 char acpi_ac_adapter_info[ACPI_MAXITEM][128];
 char acpi_ac_adapter_status[ACPI_MAXITEM][128];
 
-/* These are the strings used in the ACPI shipped with the 2.4 kernels */
-char *acpi_labels_old[] = {
-	"info",
+char *acpi_labels[] = {
+	"uevent",
 	"status",
-	"battery",
-	"ac_adapter",
-	"on-line",
-	"Design Capacity:",
-	"Present:",
-	"Remaining Capacity:",
-	"Present Rate:",
-	"State:",
-#if ACPI_THERMAL
-	"thermal",
-#endif
-	"Status:",
-	NULL
-};
-
-/* These are the strings used in ACPI in the 2.5 kernels, circa version
- * 20020214 */
-char *acpi_labels_20020214[] = {
-	"info",
-	"state",
-	"battery",
-	"ac_adapter",
-	"on-line",
-	"design capacity:",
-	"present:",
-	"remaining capacity:",
-	"present rate:",
-	"charging state:",
+	"BAT",
+	"AC",
+	"POWER_SUPPLY_CAPACITY=",
+	"POWER_SUPPLY_CHARGE_FULL_DESIGN=",
+	"POWER_SUPPLY_PRESENT=",
+	"POWER_SUPPLY_CHARGE_NOW=",
+	"POWER_SUPPLY_CURRENT_NOW=",
+	"POWER_SUPPLY_STATUS=",
 #if ACPI_THERMAL
 	"thermal_zone",
 #endif
-	"state:",
-	"last full capacity:",
+	"POWER_SUPPLY_ONLINE=",
+	"POWER_SUPPLY_CHARGE_FULL=",
 	NULL
 };
-
-char **acpi_labels = NULL;
 
 #if ACPI_THERMAL
 int acpi_thermal_count = 0;
@@ -129,6 +106,21 @@ char *get_acpi_value (const char *file, const char *key) {
 	return scan_acpi_value(buf, key);
 }
 
+/* Returns the battery percentage.
+ */
+int get_acpi_batt_percentage(int battery) {
+	int d;
+	char *s;
+
+	s = get_acpi_value(acpi_batt_info[battery], acpi_labels[label_capacity]);
+	if (s == NULL)
+		d = 0; /* battery not present */
+	else
+		d = atoi(s);
+
+	return d;
+}
+
 /* Returns the maximum capacity of a battery.
  *
  * Note that this returns the highest possible capacity for the battery,
@@ -142,7 +134,7 @@ int get_acpi_batt_capacity(int battery) {
 	int dcap, lcap;
 	char *s;
 
-	s=get_acpi_value(acpi_batt_info[battery], acpi_labels[label_design_capacity]);
+	s = get_acpi_value(acpi_batt_info[battery], acpi_labels[label_design_capacity]);
 	if (s == NULL)
 		dcap=0; /* battery not present */
 	else
@@ -182,7 +174,7 @@ int find_items (char *itemname, char infoarray[ACPI_MAXITEM][128],
 	
 	char pathname[128];
 
-	sprintf(pathname,PROC_ACPI "/%s",itemname);
+	sprintf(pathname, SYSFS_PATH);
 
 	dir = opendir(pathname);
 	if (dir == NULL)
@@ -192,6 +184,9 @@ int find_items (char *itemname, char infoarray[ACPI_MAXITEM][128],
 		    !strcmp("..", ent->d_name))
 			continue;
 
+		if (strstr(ent->d_name, itemname) != ent->d_name)
+			continue;
+
 		devices[num_devices]=strdup(ent->d_name);
 		num_devices++;
 		if (num_devices >= ACPI_MAXITEM)
@@ -199,14 +194,14 @@ int find_items (char *itemname, char infoarray[ACPI_MAXITEM][128],
 	}
 	closedir(dir);
 	
-	/* Sort, since readdir can return in any order. /proc/ does
-	 * sometimes list BATT2 before BATT1. */
+	/* Sort, since readdir can return in any order. /sys/ does
+	 * sometimes list BAT1 before BAT0. */
 	qsort(devices, num_devices, sizeof(char *), _acpi_compare_strings);
 
 	for (i = 0; i < num_devices; i++) {
-		sprintf(infoarray[i], PROC_ACPI "/%s/%s/%s", itemname, devices[i],
+		sprintf(infoarray[i], SYSFS_PATH "/%s/%s", devices[i],
 			acpi_labels[label_info]);
-		sprintf(statusarray[i], PROC_ACPI "/%s/%s/%s", itemname, devices[i],
+		sprintf(statusarray[i], SYSFS_PATH "/%s/%s", devices[i],
 			acpi_labels[label_status]);
 		free(devices[i]);
 	}
@@ -243,8 +238,8 @@ int find_thermal(void) {
 int on_ac_power (void) {
 	int i;
 	for (i = 0; i < acpi_ac_count; i++) {
-                char *online=get_acpi_value(acpi_ac_adapter_status[i], acpi_labels[label_ac_state]);
-		if (online && strcmp(acpi_labels[label_online], online) == 0)
+		char *online=get_acpi_value(acpi_ac_adapter_info[i], acpi_labels[label_ac_state]);
+		if (online && atoi(online))
 			return 1;
 		else
 			return 0;
@@ -259,7 +254,7 @@ int acpi_supported (void) {
 	DIR *dir;
 	int num;
 
-	if (!(dir = opendir(PROC_ACPI))) {
+	if (!(dir = opendir(SYSFS_PATH))) {
 		return 0;
 	}
 	closedir(dir);
@@ -269,13 +264,6 @@ int acpi_supported (void) {
 	
 	version = get_acpi_file("/sys/module/acpi/parameters/acpica_version");
 	if (version == NULL) {
-		version = get_acpi_value(PROC_ACPI "/info", "ACPI-CA Version:");
-		if (version == NULL) {
-			/* 2.5 kernel acpi */
-			version = get_acpi_value(PROC_ACPI "/info", "version:");
-		}
-	}
-	if (version == NULL) {
 		return 0;
 	}
 	num = atoi(version);
@@ -283,12 +271,6 @@ int acpi_supported (void) {
 		fprintf(stderr, "ACPI subsystem %s too is old, consider upgrading to %i.\n",
 				version, ACPI_VERSION);
 		return 0;
-	}
-	else if (num >= 20020214) {
-		acpi_labels = acpi_labels_20020214;
-	}
-	else {
-		acpi_labels = acpi_labels_old;
 	}
 	
 	find_batteries();
@@ -319,9 +301,9 @@ int acpi_read (int battery, apm_info *info) {
 	/* Internally it's zero indexed. */
 	battery--;
 	
-	buf = get_acpi_file(acpi_batt_status[battery]);
+	buf = get_acpi_file(acpi_batt_info[battery]);
 	if (buf == NULL) {
-		fprintf(stderr, "unable to read %s\n", acpi_batt_status[battery]);
+		fprintf(stderr, "unable to read %s\n", acpi_batt_info[battery]);
 		perror("read");
 		exit(1);
 	}
@@ -332,65 +314,33 @@ int acpi_read (int battery, apm_info *info) {
 	
 	/* Work out if the battery is present, and what percentage of full
 	 * it is and how much time is left. */
-	if (strcmp(scan_acpi_value(buf, acpi_labels[label_present]), "yes") == 0) {
+	if (strcmp(scan_acpi_value(buf, acpi_labels[label_present]), "1") == 0) {
 		int pcap = scan_acpi_num(buf, acpi_labels[label_remaining_capacity]);
-		int rate = scan_acpi_num(buf, acpi_labels[label_present_rate]);
-
-		if (rate) {
-			/* time remaining = (current_capacity / discharge rate) */
-			info->battery_time = (float) pcap / (float) rate * 60;
-		}
-		else {
-			char *rate_s = scan_acpi_value(buf, acpi_labels[label_present_rate]);
-			if (! rate_s) {
-				/* Time remaining unknown. */
-				info->battery_time = 0;
-			}
-			else {
-				/* a zero or unknown in the file; time 
-				 * unknown so use a negative one to
-				 * indicate this */
-				info->battery_time = -1;
-			}
-		}
-
 		state = scan_acpi_value(buf, acpi_labels[label_charging_state]);
 		if (state) {
-			if (state[0] == 'd') { /* discharging */
+			if (state[0] == 'D') { /* discharging */
 				info->battery_status = BATTERY_STATUS_CHARGING;
 				/* Expensive ac power check used here
 				 * because AC power might be on even if a
 				 * battery is discharging in some cases. */
 				info->ac_line_status = on_ac_power();
 			}
-			else if (state[0] == 'c' && state[1] == 'h') { /* charging */
+			else if (state[0] == 'C' && state[1] == 'h') { /* charging */
 				info->battery_status = BATTERY_STATUS_CHARGING;
 				info->ac_line_status = 1;
 				info->battery_flags = info->battery_flags | BATTERY_FLAGS_CHARGING;
-				if (rate)
-					info->battery_time = -1 * (float) (acpi_batt_capacity[battery] - pcap) / (float) rate * 60;
-				else
-					info->battery_time = 0;
-				if (abs(info->battery_time) < 0.5)
-					info->battery_time = 0;
 			}
-			else if (state[0] == 'o') { /* ok */
+			else if (state[0] == 'F') { /* full */
 				/* charged, on ac power */
 				info->battery_status = BATTERY_STATUS_HIGH;
 				info->ac_line_status = 1;
 			}
-			else if (state[0] == 'c') { /* not charging, so must be critical */
+			else if (state[0] == 'C') { /* not charging, so must be critical */
 				info->battery_status = BATTERY_STATUS_CRITICAL;
 				/* Expensive ac power check used here
 				 * because AC power might be on even if a
 				 * battery is critical in some cases. */
 				info->ac_line_status = on_ac_power();
-			}
-			else if (rate == 0) {
-				/* if rate is null, battery charged, on
-				 * ac power */
-				info->battery_status = BATTERY_STATUS_HIGH;
-				info->ac_line_status = 1;
 			}
 			else {
 				fprintf(stderr, "unknown battery state: %s\n", state);
@@ -400,7 +350,7 @@ int acpi_read (int battery, apm_info *info) {
 			/* Battery state unknown. */
 			info->battery_status = BATTERY_STATUS_ABSENT;
 		}
-		
+
 		if (acpi_batt_capacity[battery] == 0) {
 			/* The battery was absent, and now is present.
 			 * Well, it might be a different battery. So
@@ -414,10 +364,11 @@ int acpi_read (int battery, apm_info *info) {
 			 * capacity. Rescan for a new max capacity. */
 			find_batteries();
 		}
-		
+
 		if (pcap && acpi_batt_capacity[battery]) {
-			/* percentage = (current_capacity / max capacity) * 100 */
-			info->battery_percentage = (float) pcap / (float) acpi_batt_capacity[battery] * 100;
+			info->battery_percentage = get_acpi_batt_percentage(battery);
+			if (info->battery_percentage > 100)
+				info->battery_percentage = 100;
 		}
 		else {
 			info->battery_percentage = -1;
