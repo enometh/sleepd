@@ -2,7 +2,7 @@ CFLAGS		= -O2 -g -Wall -DACPI_APM -pthread
 BINS		= sleepd sleepctl
 PREFIX		= /
 INSTALL_PROGRAM	= install
-USE_HAL		= 1
+USE_HAL		= 0
 
 # DEB_BUILD_OPTIONS suport, to control binary stripping.
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
