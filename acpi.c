@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <string.h>
+#include <fnmatch.h>
 #ifdef ACPI_APM
 #include "apm.h"
 #endif
@@ -38,16 +39,16 @@ char *acpi_labels[] = {
 	"BAT",
 	"AC",
 	"POWER_SUPPLY_CAPACITY=",
-	"POWER_SUPPLY_CHARGE_FULL_DESIGN=",
+	"POWER_SUPPLY_??????_FULL_DESIGN=", /* CHARGE or ENERGY */
 	"POWER_SUPPLY_PRESENT=",
-	"POWER_SUPPLY_CHARGE_NOW=",
+	"POWER_SUPPLY_??????_NOW=",
 	"POWER_SUPPLY_CURRENT_NOW=",
 	"POWER_SUPPLY_STATUS=",
 #if ACPI_THERMAL
 	"thermal_zone",
 #endif
 	"POWER_SUPPLY_ONLINE=",
-	"POWER_SUPPLY_CHARGE_FULL=",
+	"POWER_SUPPLY_??????_FULL=",
 	NULL
 };
 
@@ -71,15 +72,37 @@ inline char *get_acpi_file (const char *file) {
 	return buf;
 }
 
+int strmcmp(const char *s1, const char *s2)
+{
+	for (; (*s1 == *s2) || (*s2 == '?'); s1++, s2++) {
+		if (*s1 == '\0')
+			return 0;
+	}
+	if (*s2 == '\0')
+		return 0;
+	else
+		return 1;
+}
+
 /* Given a buffer holding an acpi file, searches for the given key in it,
  * and returns the numeric value. 0 is returned on failure. */
 inline int scan_acpi_num (const char *buf, const char *key) {
 	char *ptr;
-	int ret;
-	if ((ptr = strstr(buf, key))) {
-		if (sscanf(ptr + strlen(key), "%d", &ret) == 1)
-			return ret;
-	}
+	int ret = 0;
+
+	do {
+		ptr = strchr(buf, '\n');
+		if (ptr) {
+			if (!strmcmp(buf, key)) {
+				if ((ptr = strchr(buf, '='))) {
+					sscanf(ptr + 1, "%d", &ret);
+					return ret;
+				}
+			}
+			ptr++;
+		}
+		buf = ptr;
+	} while (buf != NULL);
 	return 0;
 }
 
@@ -88,11 +111,21 @@ inline int scan_acpi_num (const char *buf, const char *key) {
 inline char *scan_acpi_value (const char *buf, const char *key) {
 	char *ptr;
 	static char ret[256];
-	
-	if ((ptr = strstr(buf, key))) {
-		if (sscanf(ptr + strlen(key), "%255s", ret) == 1)
-			return ret;
-	}
+
+	do {
+		ptr = strchr(buf, '\n');
+		if (ptr) {
+			if (!strmcmp(buf, key)) {
+				if ((ptr = strchr(buf, '='))) {
+					if (sscanf(ptr + 1, "%255s", ret) == 1) {
+						return ret;
+					}
+				}
+			}
+			ptr++;
+		}
+		buf = ptr;
+	} while (buf != NULL);
 	return NULL;
 }
 
@@ -342,6 +375,19 @@ int acpi_read (int battery, apm_info *info) {
 				 * battery is critical in some cases. */
 				info->ac_line_status = on_ac_power();
 			}
+			else if (state[0] == 'U') { /* unknown */
+				info->ac_line_status = on_ac_power();
+				int current = scan_acpi_num(buf, acpi_labels[label_present_rate]);
+				if (info->ac_line_status) {
+					if (current == 0)
+						info->battery_status = BATTERY_STATUS_HIGH;
+					else
+						info->battery_status = BATTERY_STATUS_CHARGING;
+				}
+				else {
+					info->battery_status = BATTERY_STATUS_CHARGING;
+				}
+			}
 			else {
 				fprintf(stderr, "unknown battery state: %s\n", state);
 			}
@@ -366,7 +412,7 @@ int acpi_read (int battery, apm_info *info) {
 		}
 
 		if (pcap && acpi_batt_capacity[battery]) {
-			info->battery_percentage = get_acpi_batt_percentage(battery);
+			info->battery_percentage = 100 * pcap / acpi_batt_capacity[battery];
 			if (info->battery_percentage > 100)
 				info->battery_percentage = 100;
 		}
