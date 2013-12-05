@@ -1,10 +1,11 @@
 sleepd (2.05) UNRELEASED; urgency=low
 
+  [ Joey Hess ]
   * Stop building with flash-in-the-pan HAL. Instead update acpi
     interface to use /sys/class/power_supply.
-    Note that this needs acpica_version 20120111, as provided by a recent
-    linux kernel version. Closes: #613169, #678966.
-    (Patch developed by Mageia for wmbattery.)
+    Note that this needs acpica_version 20011018.
+    Closes: #613169, #678966
+    (Patch developed by Andrew Shadura.)
 
   [ Andrew Shadura ]
   * Add UPower support.
