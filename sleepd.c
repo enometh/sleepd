@@ -468,6 +468,8 @@ void main_loop (void) {
 		}
 #endif
 
+		if (debug)
+			printf("sleepd: battery level: %d%%\n", ai.battery_percentage);
 		if (min_batt != -1 && ai.ac_line_status != 1 && 
 		    ai.battery_percentage != -1 &&
 		    ai.battery_percentage < min_batt &&
