@@ -139,21 +139,6 @@ char *get_acpi_value (const char *file, const char *key) {
 	return scan_acpi_value(buf, key);
 }
 
-/* Returns the battery percentage.
- */
-int get_acpi_batt_percentage(int battery) {
-	int d;
-	char *s;
-
-	s = get_acpi_value(acpi_batt_info[battery], acpi_labels[label_capacity]);
-	if (s == NULL)
-		d = 0; /* battery not present */
-	else
-		d = atoi(s);
-
-	return d;
-}
-
 /* Returns the maximum capacity of a battery.
  *
  * Note that this returns the highest possible capacity for the battery,
