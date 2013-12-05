@@ -28,6 +28,9 @@
 #ifdef HAL
 #include "simplehal.h"
 #endif
+#ifdef UPOWER
+#include "upower.h"
+#endif
 #include "eventmonitor.h"
 #include "sleepd.h"
 
@@ -49,6 +52,9 @@ int no_sleep=0;
 signed int min_batt=-1;
 #ifdef HAL
 int use_simplehal = 0;
+#endif
+#ifdef UPOWER
+int use_upower = 0;
 #endif
 int use_acpi=0;
 int force_hal=0;
@@ -90,6 +96,7 @@ void parse_command_line (int argc, char **argv) {
 		{"rx-min", 1, NULL, 'r'},
 		{"tx-min", 1, NULL, 't'},
 		{"force-hal", 0, NULL, 'H'},
+		{"force-upower", 0, NULL, 1},
 		{0, 0, 0, 0}
 	};
 	int force_autoprobe=0;
@@ -130,6 +137,7 @@ void parse_command_line (int argc, char **argv) {
 			case 'w':
 				use_utmp=1;
 				break;
+			case 1:
 			case 'H':
 				force_hal=1;
 				break;
@@ -444,6 +452,11 @@ void main_loop (void) {
 			simplehal_read(1, &ai);
 		}
 #endif
+#ifdef UPOWER
+		else if (use_upower) {
+			upower_read(1, &ai);
+		}
+#endif
 #if defined(USE_APM)
 		else {
 			apm_read(&ai);
@@ -641,13 +654,20 @@ int main (int argc, char **argv) {
 		    (acpi_ac_count > 0 || acpi_batt_count > 0)) {
 			use_acpi=1;
 		}
-#ifdef HAL
+#if defined(HAL)
 		else if (simplehal_supported()) {
 			use_simplehal=1;
 		}
 		else {
 			syslog(LOG_NOTICE, "failed to connect to hal on startup, but will try to use it anyway");
 			use_simplehal=1;
+		}
+#elif defined(UPOWER)
+		else if (upower_supported()) {
+			use_upower = 1;
+		}
+		else {
+			syslog(LOG_NOTICE, "failed to connect to upower");
 		}
 #else
 		else {

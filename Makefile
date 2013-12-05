@@ -5,6 +5,7 @@ PREFIX      = /
 INSTALL_PROGRAM	= install
 # USE_HAL		= 1
 # USE_APM		= 1
+# USE_UPOWER	= 1
 
 # DEB_BUILD_OPTIONS suport, to control binary stripping.
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
@@ -27,6 +28,14 @@ OBJS+=simplehal.o
 CFLAGS+=-DHAL
 simplehal.o: simplehal.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(shell pkg-config --cflags hal) -c simplehal.c -o simplehal.o
+endif
+
+ifdef USE_UPOWER
+LIBS+=$(shell pkg-config --libs upower-glib)
+OBJS+=upower.o
+CFLAGS+=-DUPOWER
+upower.o: upower.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(shell pkg-config --cflags upower-glib) -c upower.c -o upower.o
 endif
 
 ifdef USE_APM
