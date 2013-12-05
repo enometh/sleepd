@@ -632,7 +632,9 @@ int main (int argc, char **argv) {
 	
 	if (force_hal
 #ifdef USE_APM
-	    || apm_exists() != 0
+		|| apm_exists() != 0
+#else
+		|| 1
 #endif
 	    ) {
 		if (! sleep_command)
