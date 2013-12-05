@@ -3,8 +3,12 @@ sleepd (2.05) UNRELEASED; urgency=low
   * Stop building with flash-in-the-pan HAL. Instead update acpi
     interface to use /sys/class/power_supply.
     Note that this needs acpica_version 20120111, as provided by a recent
-    linux kernel version. Closes: #613169
+    linux kernel version. Closes: #613169, #678966.
     (Patch developed by Mageia for wmbattery.)
+
+  [ Andrew Shadura ]
+  * Add UPower support.
+  * Use Debhelper 9, so we can have hardening flags automatically.
 
  -- Joey Hess <joeyh@debian.org>  Fri, 10 May 2013 18:55:49 -0400
 
