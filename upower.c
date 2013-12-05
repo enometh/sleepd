@@ -9,10 +9,6 @@
 #include <upower.h>
 #include "apm.h"
 
-static UpClient * up = NULL;
-
-GPtrArray * devices = NULL;
-
 int num_batteries = 0;
 
 struct context {
@@ -42,34 +38,34 @@ static void get_devinfo(gpointer device, gpointer result)
 	}
 }
 
-static void find_devices (void) {
-	if (!up) return;
-	if (devices)
-		g_ptr_array_free(devices, TRUE);
-	up_client_enumerate_devices_sync(up, NULL, NULL);
-
-	devices = up_client_get_devices(up);
-}
-
 int upower_supported (void) {
-	if (up) {
-		g_object_unref(up);
-		up = NULL;
-	}
+	UpClient * up;
 	up = up_client_new();
+
 	if (!up) {
 		return 0;
 	}
 	else {
-		find_devices();
+		g_object_unref(up);
 		return 1;
 	}
 }
 
 /* Fill the passed apm_info struct. */
-int upower_read (int battery, apm_info *info) {
+int upower_read(int battery, apm_info *info) {
+	UpClient * up;
+	GPtrArray * devices = NULL;
+
+	up = up_client_new();
+
+	if (!up) {
+		return 0;
+	}
+
 	/* Allow a battery that was not present before to appear. */
-	find_devices();
+	up_client_enumerate_devices_sync(up, NULL, NULL);
+
+	devices = up_client_get_devices(up);
 
 	info->battery_flags = 0;
 	info->using_minutes = 0;
@@ -78,20 +74,12 @@ int upower_read (int battery, apm_info *info) {
 
 	struct context ctx = {
 		.current = 0,
-		.needed = 0,
+		.needed = battery - 1,
 		.state = UP_DEVICE_STATE_UNKNOWN,
 		.percentage = -1
 	};
+
 	g_ptr_array_foreach(devices, &get_devinfo, &ctx);
-	if (ctx.percentage != -1) {
-		printf("percentage is %d\n", ctx.percentage);
-	}
-	if (ctx.percentage < 0) {
-		info->battery_percentage = 0;
-		info->battery_time = 0;
-		info->battery_status = BATTERY_STATUS_ABSENT;
-		return 0;
-	}
 
 	/* remaining_time and charge_level.percentage are not a mandatory
 	 * keys, so if not present, -1 will be returned */
@@ -120,5 +108,13 @@ int upower_read (int battery, apm_info *info) {
 		fprintf(stderr, "unknown battery state\n");
 	}
 
+	if (ctx.percentage < 0) {
+		info->battery_percentage = 0;
+		info->battery_time = 0;
+		info->battery_status = BATTERY_STATUS_ABSENT;
+	}
+
+	g_ptr_array_free(devices, TRUE);
+	g_object_unref(up);
 	return 0;
 }
