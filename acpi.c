@@ -143,37 +143,17 @@ char *get_acpi_value (const char *file, const char *key) {
 	return scan_acpi_value(buf, key);
 }
 
-/* Returns the maximum capacity of a battery.
- *
- * Note that this returns the highest possible capacity for the battery,
- * even if it can no longer charge that fully. So normally it uses the
- * design capacity. While the last full capacity of the battery should
- * never exceed the design capacity, some silly hardware might report
- * that it does. So if the last full capacity is greater, it will be
- * returned.
+/* Returns the last full charge capacity of a battery.
  */
 int get_acpi_batt_capacity(int battery) {
-	int dcap, lcap;
 	char *s;
 
-	s = get_acpi_value(acpi_batt_info[battery], acpi_labels[label_design_capacity]);
-	if (s == NULL)
-		dcap=0; /* battery not present */
-	else
-		dcap=atoi(s);
-
-	/* This is ACPI's broken way of saying that there is no battery. */
-	if (dcap == 655350)
+	s = get_acpi_value(acpi_batt_info[battery], acpi_labels[label_last_full_capacity]);
+	if (s == NULL) {
 		return 0;
-
-	s=get_acpi_value(acpi_batt_info[battery], acpi_labels[label_last_full_capacity]);
-	if (s != NULL) {
-		lcap=atoi(s);
-		if (lcap > dcap)
-			return lcap;
+	} else {
+		return atoi(s);
 	}
-
-	return dcap;
 }
 
 /* Comparison function for qsort. */
