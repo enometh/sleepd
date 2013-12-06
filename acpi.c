@@ -211,9 +211,9 @@ int find_items (char *itemname, char infoarray[ACPI_MAXITEM][128],
 	qsort(devices, num_devices, sizeof(char *), _acpi_compare_strings);
 
 	for (i = 0; i < num_devices; i++) {
-		sprintf(infoarray[i], SYSFS_PATH "/%s/%s", devices[i],
+		snprintf(infoarray[i], sizeof(infoarray[i]), SYSFS_PATH "/%s/%s", devices[i],
 			acpi_labels[label_info]);
-		sprintf(statusarray[i], SYSFS_PATH "/%s/%s", devices[i],
+		snprintf(statusarray[i], sizeof(statusarray[i]), SYSFS_PATH "/%s/%s", devices[i],
 			acpi_labels[label_status]);
 		free(devices[i]);
 	}
