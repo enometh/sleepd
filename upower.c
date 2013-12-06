@@ -27,6 +27,7 @@ static void get_devinfo(gpointer device, gpointer result)
 	guint state;
 	guint kind;
 	gint64 time_to_empty;
+	gint64 time_to_full;
 	struct context * ctx = result;
 
 	g_object_get(G_OBJECT(device), "percentage", &percentage,
@@ -34,12 +35,17 @@ static void get_devinfo(gpointer device, gpointer result)
 		"state", &state,
 		"kind", &kind,
 		"time-to-empty", &time_to_empty,
+		"time-to-full", &time_to_full,
 		NULL);
 	if (kind == UP_DEVICE_KIND_BATTERY) {
 		if (ctx->current == ctx->needed) {
 			ctx->percentage = (int)percentage;
 			ctx->state = state;
-			ctx->time = (int)time_to_empty / 60;
+			if (time_to_empty) {
+				ctx->time = time_to_empty / 60;
+			} else {
+				ctx->time = -time_to_full / 60;
+			}
 		}
 		ctx->current++;
 	} else if (kind == UP_DEVICE_KIND_LINE_POWER) {
