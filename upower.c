@@ -16,25 +16,30 @@ struct context {
 	int needed;
 	guint state;
 	int percentage;
+	gboolean ac;
 };
 
 static void get_devinfo(gpointer device, gpointer result)
 {
-	gboolean is_rechargeable;
+	gboolean online;
 	gdouble percentage;
 	guint state;
+	guint kind;
 	struct context * ctx = result;
 
 	g_object_get(G_OBJECT(device), "percentage", &percentage,
-		"is-rechargeable", &is_rechargeable,
+		"online", &online,
 		"state", &state,
+		"kind", &kind,
 		NULL);
-	if (is_rechargeable) {
+	if (kind == UP_DEVICE_KIND_BATTERY) {
 		if (ctx->current == ctx->needed) {
 			ctx->percentage = (int)percentage;
 			ctx->state = state;
 		}
 		ctx->current++;
+	} else if (kind == UP_DEVICE_KIND_LINE_POWER) {
+		ctx->ac |= online;
 	}
 }
 
@@ -70,16 +75,17 @@ int upower_read(int battery, apm_info *info) {
 	info->battery_flags = 0;
 	info->using_minutes = 0;
 
-	info->ac_line_status = !up_client_get_on_battery(up);
-
 	struct context ctx = {
 		.current = 0,
 		.needed = battery - 1,
 		.state = UP_DEVICE_STATE_UNKNOWN,
-		.percentage = -1
+		.percentage = -1,
+		.ac = FALSE
 	};
 
 	g_ptr_array_foreach(devices, &get_devinfo, &ctx);
+
+	info->ac_line_status = ctx.ac;
 
 	/* remaining_time and charge_level.percentage are not a mandatory
 	 * keys, so if not present, -1 will be returned */
