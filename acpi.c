@@ -36,8 +36,8 @@ char acpi_ac_adapter_status[ACPI_MAXITEM][128];
 char *acpi_labels[] = {
 	"uevent",
 	"status",
-	"BAT",
-	"AC",
+	"Battery",
+	"Mains",
 	"POWER_SUPPLY_CAPACITY=",
 	"POWER_SUPPLY_??????_FULL_DESIGN=", /* CHARGE or ENERGY */
 	"POWER_SUPPLY_PRESENT=",
@@ -182,12 +182,22 @@ int find_items (char *itemname, char infoarray[ACPI_MAXITEM][128],
 	if (dir == NULL)
 		return 0;
 	while ((ent = readdir(dir))) {
+		char filename[128];
+		char buf[1024];
+
 		if (!strcmp(".", ent->d_name) || 
 		    !strcmp("..", ent->d_name))
 			continue;
 
-		if (strstr(ent->d_name, itemname) != ent->d_name)
-			continue;
+		snprintf(filename, sizeof(filename), SYSFS_PATH "/%s/type", ent->d_name);
+		int fd = open(filename, O_RDONLY);
+		if (fd != -1) {
+			int end = read(fd, buf, sizeof(buf));
+			buf[end-1] = '\0';
+			close(fd);
+			if (strstr(buf, itemname) != buf)
+				continue;
+		}
 
 		devices[num_devices]=strdup(ent->d_name);
 		num_devices++;
@@ -195,7 +205,7 @@ int find_items (char *itemname, char infoarray[ACPI_MAXITEM][128],
 			break;
 	}
 	closedir(dir);
-	
+
 	/* Sort, since readdir can return in any order. /sys/ does
 	 * sometimes list BAT1 before BAT0. */
 	qsort(devices, num_devices, sizeof(char *), _acpi_compare_strings);
