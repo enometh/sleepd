@@ -36,8 +36,8 @@ char acpi_ac_adapter_status[ACPI_MAXITEM][128];
 char *acpi_labels[] = {
 	"uevent",
 	"status",
-	"BAT",
-	"AC",
+	"Battery",
+	"Mains",
 	"POWER_SUPPLY_CAPACITY=",
 	"POWER_SUPPLY_??????_FULL_DESIGN=", /* CHARGE or ENERGY */
 	"POWER_SUPPLY_PRESENT=",
@@ -92,15 +92,16 @@ inline int scan_acpi_num (const char *buf, const char *key) {
 
 	do {
 		ptr = strchr(buf, '\n');
-		if (ptr) {
-			if (!strmcmp(buf, key)) {
-				if ((ptr = strchr(buf, '='))) {
-					sscanf(ptr + 1, "%d", &ret);
-					return ret;
-				}
+		if (!strmcmp(buf, key)) {
+			if ((ptr = strchr(buf, '='))) {
+				sscanf(ptr + 1, "%d", &ret);
+				return ret;
+			} else {
+				return 0;
 			}
-			ptr++;
 		}
+		if (ptr)
+			ptr++;
 		buf = ptr;
 	} while (buf != NULL);
 	return 0;
@@ -114,16 +115,19 @@ inline char *scan_acpi_value (const char *buf, const char *key) {
 
 	do {
 		ptr = strchr(buf, '\n');
-		if (ptr) {
-			if (!strmcmp(buf, key)) {
-				if ((ptr = strchr(buf, '='))) {
-					if (sscanf(ptr + 1, "%255s", ret) == 1) {
-						return ret;
-					}
+		if (!strmcmp(buf, key)) {
+			if ((ptr = strchr(buf, '='))) {
+				if (sscanf(ptr + 1, "%255s", ret) == 1) {
+					return ret;
+				} else {
+					return NULL;
 				}
+			} else {
+				return NULL;
 			}
-			ptr++;
 		}
+		if (ptr)
+			ptr++;
 		buf = ptr;
 	} while (buf != NULL);
 	return NULL;
@@ -139,37 +143,17 @@ char *get_acpi_value (const char *file, const char *key) {
 	return scan_acpi_value(buf, key);
 }
 
-/* Returns the maximum capacity of a battery.
- *
- * Note that this returns the highest possible capacity for the battery,
- * even if it can no longer charge that fully. So normally it uses the
- * design capacity. While the last full capacity of the battery should
- * never exceed the design capacity, some silly hardware might report
- * that it does. So if the last full capacity is greater, it will be
- * returned.
+/* Returns the last full charge capacity of a battery.
  */
 int get_acpi_batt_capacity(int battery) {
-	int dcap, lcap;
 	char *s;
 
-	s = get_acpi_value(acpi_batt_info[battery], acpi_labels[label_design_capacity]);
-	if (s == NULL)
-		dcap=0; /* battery not present */
-	else
-		dcap=atoi(s);
-
-	/* This is ACPI's broken way of saying that there is no battery. */
-	if (dcap == 655350)
+	s = get_acpi_value(acpi_batt_info[battery], acpi_labels[label_last_full_capacity]);
+	if (s == NULL) {
 		return 0;
-
-	s=get_acpi_value(acpi_batt_info[battery], acpi_labels[label_last_full_capacity]);
-	if (s != NULL) {
-		lcap=atoi(s);
-		if (lcap > dcap)
-			return lcap;
+	} else {
+		return atoi(s);
 	}
-
-	return dcap;
 }
 
 /* Comparison function for qsort. */
@@ -198,12 +182,22 @@ int find_items (char *itemname, char infoarray[ACPI_MAXITEM][128],
 	if (dir == NULL)
 		return 0;
 	while ((ent = readdir(dir))) {
+		char filename[128];
+		char buf[1024];
+
 		if (!strcmp(".", ent->d_name) || 
 		    !strcmp("..", ent->d_name))
 			continue;
 
-		if (strstr(ent->d_name, itemname) != ent->d_name)
-			continue;
+		snprintf(filename, sizeof(filename), SYSFS_PATH "/%s/type", ent->d_name);
+		int fd = open(filename, O_RDONLY);
+		if (fd != -1) {
+			int end = read(fd, buf, sizeof(buf));
+			buf[end-1] = '\0';
+			close(fd);
+			if (strstr(buf, itemname) != buf)
+				continue;
+		}
 
 		devices[num_devices]=strdup(ent->d_name);
 		num_devices++;
@@ -211,15 +205,15 @@ int find_items (char *itemname, char infoarray[ACPI_MAXITEM][128],
 			break;
 	}
 	closedir(dir);
-	
+
 	/* Sort, since readdir can return in any order. /sys/ does
 	 * sometimes list BAT1 before BAT0. */
 	qsort(devices, num_devices, sizeof(char *), _acpi_compare_strings);
 
 	for (i = 0; i < num_devices; i++) {
-		sprintf(infoarray[i], SYSFS_PATH "/%s/%s", devices[i],
+		snprintf(infoarray[i], sizeof(infoarray[i]), SYSFS_PATH "/%s/%s", devices[i],
 			acpi_labels[label_info]);
-		sprintf(statusarray[i], SYSFS_PATH "/%s/%s", devices[i],
+		snprintf(statusarray[i], sizeof(statusarray[i]), SYSFS_PATH "/%s/%s", devices[i],
 			acpi_labels[label_status]);
 		free(devices[i]);
 	}
