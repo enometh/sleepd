@@ -92,15 +92,16 @@ inline int scan_acpi_num (const char *buf, const char *key) {
 
 	do {
 		ptr = strchr(buf, '\n');
-		if (ptr) {
-			if (!strmcmp(buf, key)) {
-				if ((ptr = strchr(buf, '='))) {
-					sscanf(ptr + 1, "%d", &ret);
-					return ret;
-				}
+		if (!strmcmp(buf, key)) {
+			if ((ptr = strchr(buf, '='))) {
+				sscanf(ptr + 1, "%d", &ret);
+				return ret;
+			} else {
+				return 0;
 			}
-			ptr++;
 		}
+		if (ptr)
+			ptr++;
 		buf = ptr;
 	} while (buf != NULL);
 	return 0;
@@ -114,16 +115,19 @@ inline char *scan_acpi_value (const char *buf, const char *key) {
 
 	do {
 		ptr = strchr(buf, '\n');
-		if (ptr) {
-			if (!strmcmp(buf, key)) {
-				if ((ptr = strchr(buf, '='))) {
-					if (sscanf(ptr + 1, "%255s", ret) == 1) {
-						return ret;
-					}
+		if (!strmcmp(buf, key)) {
+			if ((ptr = strchr(buf, '='))) {
+				if (sscanf(ptr + 1, "%255s", ret) == 1) {
+					return ret;
+				} else {
+					return NULL;
 				}
+			} else {
+				return NULL;
 			}
-			ptr++;
 		}
+		if (ptr)
+			ptr++;
 		buf = ptr;
 	} while (buf != NULL);
 	return NULL;
