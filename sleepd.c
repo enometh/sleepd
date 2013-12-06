@@ -426,7 +426,7 @@ int check_utmp (int total_unused) {
 void main_loop (void) {
 	int activity=0, sleep_now=0, total_unused=0;
 	int sleep_battery=0;
-	int prev_ac_line_status=0;
+	int prev_ac_line_status=-1;
 	time_t nowtime, oldtime=0;
 	apm_info ai;
 	double loadavg[1];
@@ -470,12 +470,14 @@ void main_loop (void) {
 
 		if (debug)
 			printf("sleepd: battery level: %d%%\n", ai.battery_percentage);
+
 		if (min_batt != -1 && ai.ac_line_status != 1 && 
 		    ai.battery_percentage != -1 &&
 		    ai.battery_percentage < min_batt &&
 		    ai.battery_status != BATTERY_STATUS_ABSENT) {
 			sleep_battery = 1;
 		}
+
 		if (sleep_battery && ! require_unused_and_battery) {
 			syslog(LOG_NOTICE, "battery level %d%% is below %d%%; forcing hibernation", ai.battery_percentage, min_batt);
 			if (system(hibernate_command) != 0)
@@ -487,7 +489,15 @@ void main_loop (void) {
 			oldtime=0;
 			sleep_battery=0;
 		}
-	
+
+		if ((ai.ac_line_status != prev_ac_line_status) && (prev_ac_line_status != -1)) {
+			/* AC plug/unplug counts as activity. */
+			if (debug)
+				printf("sleepd: activity: AC status change\n");
+			activity=1;
+		}
+		prev_ac_line_status=ai.ac_line_status;
+
 		/* Rest is only needed if sleeping on inactivity. */
 		if (! max_unused && ! ac_max_unused) {
 			sleep(sleep_time);
@@ -514,14 +524,6 @@ void main_loop (void) {
 		if (use_utmp == 1) {
 			total_unused=check_utmp(total_unused);
 		}
-
-		if (ai.ac_line_status != prev_ac_line_status) {
-			/* AC plug/unplug counts as activity. */
-			if (debug)
-				printf("sleepd: activity: AC status change\n");
-			activity=1;
-		}
-		prev_ac_line_status=ai.ac_line_status;
 
 		sleep(sleep_time);
 
