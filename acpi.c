@@ -328,6 +328,25 @@ int acpi_read (int battery, apm_info *info) {
 	 * it is and how much time is left. */
 	if (strcmp(scan_acpi_value(buf, acpi_labels[label_present]), "1") == 0) {
 		int pcap = scan_acpi_num(buf, acpi_labels[label_remaining_capacity]);
+		int rate = scan_acpi_num(buf, acpi_labels[label_present_rate]);
+		if (rate) {
+			/* time remaining = (current_capacity / discharge rate) */
+			info->battery_time = (float) pcap / (float) rate * 60;
+		}
+		else {
+			char *rate_s = scan_acpi_value(buf, acpi_labels[label_present_rate]);
+			if (! rate_s) {
+				/* Time remaining unknown. */
+				info->battery_time = 0;
+			}
+			else {
+				/* a zero or unknown in the file; time 
+				 * unknown so use a negative one to
+				 * indicate this */
+				info->battery_time = -1;
+			}
+		}
+
 		state = scan_acpi_value(buf, acpi_labels[label_charging_state]);
 		if (state) {
 			if (state[0] == 'D') { /* discharging */
@@ -341,6 +360,12 @@ int acpi_read (int battery, apm_info *info) {
 				info->battery_status = BATTERY_STATUS_CHARGING;
 				info->ac_line_status = 1;
 				info->battery_flags = info->battery_flags | BATTERY_FLAGS_CHARGING;
+				if (rate)
+					info->battery_time = -1 * (float) (acpi_batt_capacity[battery] - pcap) / (float) rate * 60;
+				else
+					info->battery_time = 0;
+				if (abs(info->battery_time) < 0.5)
+					info->battery_time = 0;
 			}
 			else if (state[0] == 'F') { /* full */
 				/* charged, on ac power */
