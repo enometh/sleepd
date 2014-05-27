@@ -1,4 +1,4 @@
-sleepd (2.05) UNRELEASED; urgency=low
+sleepd (2.05) unstable; urgency=low
 
   [ Joey Hess ]
   * Stop building with flash-in-the-pan HAL. Instead update acpi
@@ -6,6 +6,7 @@ sleepd (2.05) UNRELEASED; urgency=low
     Note that this needs acpica_version 20011018.
     Closes: #613169, #678966
     (Patch developed by Andrew Shadura.)
+  * Orphaned the package.
 
   [ Andrew Shadura ]
   * Add UPower support.
