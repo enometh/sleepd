@@ -472,7 +472,7 @@ void main_loop (void) {
 			printf("sleepd: battery level: %d%%, remaining time: %c%d:%02d\n",
 				ai.battery_percentage,
 				(ai.battery_time < 0) ? '-' : ' ',
-				abs(ai.battery_time) / 60, abs(ai.battery_time) % 60);
+				abs(ai.battery_time) / 3600, (abs(ai.battery_time) / 60) % 60);
 
 		if (min_batt != -1 && ai.ac_line_status != 1 && 
 		    ai.battery_percentage != -1 &&
