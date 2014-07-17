@@ -1,3 +1,10 @@
+sleepd (2.06) unstable; urgency=medium
+
+  * Fix time calculation for acpi backend.
+  * Fix upower detection.
+
+ -- Andrew Shadura <andrewsh@debian.org>  Fri, 18 Jul 2014 01:32:05 +0200
+
 sleepd (2.05) unstable; urgency=low
 
   [ Joey Hess ]
