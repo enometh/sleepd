@@ -1,3 +1,11 @@
+sleepd (2.06) unstable; urgency=medium
+
+  * Better AC detection.
+  * Support times with upower and acpi.
+  * Use the latest upower API.
+
+ -- Andrew Shadura <andrewsh@debian.org>  Fri, 18 Jul 2014 00:23:57 +0200
+
 sleepd (2.05) unstable; urgency=low
 
   [ Joey Hess ]
