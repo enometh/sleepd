@@ -17,6 +17,7 @@ struct context {
 	guint state;
 	int percentage;
 	gboolean ac;
+	int time;
 };
 
 static void get_devinfo(gpointer device, gpointer result)
@@ -25,17 +26,26 @@ static void get_devinfo(gpointer device, gpointer result)
 	gdouble percentage;
 	guint state;
 	guint kind;
+	gint64 time_to_empty;
+	gint64 time_to_full;
 	struct context * ctx = result;
 
 	g_object_get(G_OBJECT(device), "percentage", &percentage,
 		"online", &online,
 		"state", &state,
 		"kind", &kind,
+		"time-to-empty", &time_to_empty,
+		"time-to-full", &time_to_full,
 		NULL);
 	if (kind == UP_DEVICE_KIND_BATTERY) {
 		if (ctx->current == ctx->needed) {
 			ctx->percentage = (int)percentage;
 			ctx->state = state;
+			if (time_to_full != 0) {
+				ctx->time = time_to_full;
+			} else {
+				ctx->time = time_to_empty;
+			}
 		}
 		ctx->current++;
 	} else if (kind == UP_DEVICE_KIND_LINE_POWER) {
@@ -67,8 +77,10 @@ int upower_read(int battery, apm_info *info) {
 		return 0;
 	}
 
+	#if !UP_CHECK_VERSION(0, 9, 99)
 	/* Allow a battery that was not present before to appear. */
 	up_client_enumerate_devices_sync(up, NULL, NULL);
+	#endif
 
 	devices = up_client_get_devices(up);
 
@@ -80,7 +92,8 @@ int upower_read(int battery, apm_info *info) {
 		.needed = battery - 1,
 		.state = UP_DEVICE_STATE_UNKNOWN,
 		.percentage = -1,
-		.ac = FALSE
+		.ac = FALSE,
+		.time = -1
 	};
 
 	g_ptr_array_foreach(devices, &get_devinfo, &ctx);
@@ -89,7 +102,7 @@ int upower_read(int battery, apm_info *info) {
 
 	/* remaining_time and charge_level.percentage are not a mandatory
 	 * keys, so if not present, -1 will be returned */
-	info->battery_time = 0;
+	info->battery_time = ctx.time;
 	info->battery_percentage = ctx.percentage;
 	if (ctx.state == UP_DEVICE_STATE_DISCHARGING) {
 		info->battery_status = BATTERY_STATUS_CHARGING;
