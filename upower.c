@@ -41,10 +41,10 @@ static void get_devinfo(gpointer device, gpointer result)
 		if (ctx->current == ctx->needed) {
 			ctx->percentage = (int)percentage;
 			ctx->state = state;
-			if (time_to_full != 0) {
-				ctx->time = time_to_full;
-			} else {
+			if (time_to_empty) {
 				ctx->time = time_to_empty;
+			} else {
+				ctx->time = -time_to_full;
 			}
 		}
 		ctx->current++;
