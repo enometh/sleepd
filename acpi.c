@@ -331,7 +331,7 @@ int acpi_read (int battery, apm_info *info) {
 		int rate = scan_acpi_num(buf, acpi_labels[label_present_rate]);
 		if (rate) {
 			/* time remaining = (current_capacity / discharge rate) */
-			info->battery_time = (float) pcap / (float) rate;
+			info->battery_time = (float) pcap / (float) rate * 60;
 		}
 		else {
 			char *rate_s = scan_acpi_value(buf, acpi_labels[label_present_rate]);
