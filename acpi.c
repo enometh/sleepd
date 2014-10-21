@@ -416,7 +416,7 @@ int acpi_read (int battery, apm_info *info) {
 		}
 
 		if (pcap && acpi_batt_capacity[battery]) {
-			info->battery_percentage = 100 * pcap / acpi_batt_capacity[battery];
+			info->battery_percentage = (long) 100 * pcap / acpi_batt_capacity[battery];
 			if (info->battery_percentage > 100)
 				info->battery_percentage = 100;
 		}
