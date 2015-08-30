@@ -1,3 +1,9 @@
+sleepd (2.09) unstable; urgency=medium
+
+  * Port updates for ACPI and UPower backends from wmbattery.
+
+ -- Andrew Shadura <andrewsh@debian.org>  Sun, 30 Aug 2015 13:35:35 +0200
+
 sleepd (2.08) unstable; urgency=medium
 
   * Fix battery percentage calculation.
