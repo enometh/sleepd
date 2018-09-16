@@ -1,3 +1,10 @@
+sleepd (2.10) unstable; urgency=medium
+
+  * Stop depending on libapm-dev.
+  * Update Vcs-Git.
+
+ -- Andrej Shadura <andrewsh@debian.org>  Sun, 16 Sep 2018 11:13:08 +0200
+
 sleepd (2.09) unstable; urgency=medium
 
   * Port updates for ACPI and UPower backends from wmbattery.
