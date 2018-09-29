@@ -1,6 +1,7 @@
 sleepd (2.11) UNRELEASED; urgency=medium
 
   * Trim trailing whitespace.
+  * Use secure copyright file specification URI.
 
  -- Jelmer Vernooĳ <jelmer@debian.org>  Sat, 29 Sep 2018 01:01:19 +0100
 
