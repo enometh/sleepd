@@ -9,6 +9,7 @@ sleepd (2.11) UNRELEASED; urgency=medium
 
   [ Debian Janitor ]
   * Use secure URI in Homepage field.
+  * Explicitly specify source format.
 
  -- Jelmer Vernooĳ <jelmer@debian.org>  Sat, 29 Sep 2018 01:01:19 +0100
 
