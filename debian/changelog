@@ -7,6 +7,9 @@ sleepd (2.11) UNRELEASED; urgency=medium
   [ Ondřej Nový ]
   * d/control: Add Vcs-* field
 
+  [ Debian Janitor ]
+  * Use secure URI in Homepage field.
+
  -- Jelmer Vernooĳ <jelmer@debian.org>  Sat, 29 Sep 2018 01:01:19 +0100
 
 sleepd (2.10) unstable; urgency=medium
