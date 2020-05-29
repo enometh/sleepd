@@ -1,7 +1,7 @@
 Source: sleepd
 Section: admin
 Priority: optional
-Build-Depends: debhelper-compat (= 12), dpkg-dev (>= 1.9.0), libupower-glib-dev
+Build-Depends: debhelper-compat (= 13), dpkg-dev (>= 1.9.0), libupower-glib-dev
 Maintainer: Debian QA Group <packages@qa.debian.org>
 Standards-Version: 4.5.0
 Vcs-Git: https://salsa.debian.org/debian/sleepd
