@@ -1,4 +1,6 @@
-sleepd (2.11) UNRELEASED; urgency=medium
+sleepd (2.11) unstable; urgency=medium
+
+  * QA upload.
 
   [ Jelmer Vernooĳ ]
   * Trim trailing whitespace.
@@ -12,7 +14,14 @@ sleepd (2.11) UNRELEASED; urgency=medium
   * Explicitly specify source format.
   * Bump debhelper from old 9 to 12.
 
- -- Jelmer Vernooĳ <jelmer@debian.org>  Sat, 29 Sep 2018 01:01:19 +0100
+  [ Sudip Mukherjee ]
+  * Update Standards-Version to 4.5.0
+  * Add Pre-Depends.
+  * Update compat level to 13.
+  * Use canonical URI with Vcs-Git.
+  * Fix FTBFS with gcc-10. (Closes: #957810)
+
+ -- Sudip Mukherjee <sudipm.mukherjee@gmail.com>  Fri, 29 May 2020 18:24:44 +0100
 
 sleepd (2.10) unstable; urgency=medium
 
