@@ -6,8 +6,6 @@ struct event_data
 	int emactivity;
 };
 
-struct event_data eventData;
-
 extern void *eventMonitor();
 
 extern pthread_mutex_t activity_mutex;
