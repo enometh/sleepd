@@ -28,6 +28,8 @@
 
 #include "eventmonitor.h"
 
+extern struct event_data eventData;
+
 pthread_mutex_t activity_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t condition_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t condition_cond = PTHREAD_COND_INITIALIZER;

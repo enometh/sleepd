@@ -67,6 +67,7 @@ int min_rx=RXRATE;
 char netdevtx[MAX_NET][44];
 char netdevrx[MAX_NET][44];
 int debug=0;
+struct event_data eventData;
 
 void usage () {
 	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-v] [-c n] [-b n] [-A] [-H] [-N [dev] [-t n] [-r n]]\n");
